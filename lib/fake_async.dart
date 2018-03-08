@@ -62,8 +62,8 @@ class FakeAsync {
 
   /// Creates a [FakeAsync].
   ///
-  /// Within [run], the [`clock`][] field will start at [initialTime] and move
-  /// forward as fake time elapses.
+  /// Within [run], the [`clock`][] property will start at [initialTime] and
+  /// move forward as fake time elapses.
   ///
   /// [`clock`]: https://www.dartdocs.org/documentation/clock/latest/clock/clock.html
   FakeAsync({DateTime initialTime}) {
@@ -78,8 +78,9 @@ class FakeAsync {
   /// already been elapsed. Further calls to [elapse] and [elapseBlocking] will
   /// advance the clock as well.
   ///
-  /// Note that it's usually easier to use the top-level [`clock`][] field. Only
-  /// call this function if you want a different [initialTime] than the default.
+  /// Note that it's usually easier to use the top-level [`clock`][] property.
+  /// Only call this function if you want a different [initialTime] than the
+  /// default.
   ///
   /// [`clock`]: https://www.dartdocs.org/documentation/clock/latest/clock/clock.html
   Clock getClock(DateTime initialTime) =>
@@ -129,10 +130,10 @@ class FakeAsync {
   /// asynchronous features used within [callback] are controlled by calls to
   /// [elapse] rather than the passing of real time.
   ///
-  /// The [`clock`][] field will be set to a clock that reports the fake elapsed
-  /// time. By default, it starts at the time the [FakeAsync] was created
-  /// (according to [`clock.now()`][]), but this can be controlled by passing
-  /// `initialTime` to [new FakeAsync].
+  /// The [`clock`][] property will be set to a clock that reports the fake
+  /// elapsed time. By default, it starts at the time the [FakeAsync] was
+  /// created (according to [`clock.now()`][]), but this can be controlled by
+  /// passing `initialTime` to [new FakeAsync].
   ///
   /// [`clock`]: https://www.dartdocs.org/documentation/clock/latest/clock/clock.html
   /// [`clock.now()`]: https://www.dartdocs.org/documentation/clock/latest/clock/Clock/now.html
