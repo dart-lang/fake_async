@@ -1,14 +1,14 @@
 language: dart
 
 dart:
-- dev
+ - dev
 
 # See https://docs.travis-ci.com/user/languages/dart/ for details.
 dart_task:
-- test: --platform vm
-- test: --platform firefox
-- dartfmt
-- dartanalyzer
+ - test: --platform vm
+ - test: --platform firefox
+ - dartfmt
+ - dartanalyzer
 
 # Only building master means that we don't run two builds for each pull request.
 branches:
