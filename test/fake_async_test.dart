@@ -487,28 +487,29 @@ void main() {
 
     test('should report debugging information of pending timers', () {
       FakeAsync().run((fakeAsync) {
-        expect(fakeAsync.pendingTimersDebugInfo, isEmpty);
+        expect(fakeAsync.pendingTimers, isEmpty);
         // Use `dynamic` so we can access `_FakeTimer` internals.
-        dynamic nonPeriodic = Timer(const Duration(seconds: 1), () {});
-        dynamic periodic =
-            Timer.periodic(const Duration(seconds: 2), (Timer timer) {});
-        final debugInfo = fakeAsync.pendingTimersDebugInfo;
+        var nonPeriodic = Timer(const Duration(seconds: 1), () {}) as FakeTimer;
+        var periodic =
+            Timer.periodic(const Duration(seconds: 2), (Timer timer) {})
+                as FakeTimer;
+        final debugInfo = fakeAsync.pendingTimers;
         expect(debugInfo.length, 2);
         expect(
           debugInfo,
           containsAll([
-            nonPeriodic.debugInfo,
-            periodic.debugInfo,
+            nonPeriodic,
+            periodic,
           ]),
         );
 
         const thisFileName = 'fake_async_test.dart';
-        expect(nonPeriodic.debugInfo, contains(':01.0'));
-        expect(nonPeriodic.debugInfo, contains('periodic: false'));
-        expect(nonPeriodic.debugInfo, contains(thisFileName));
-        expect(periodic.debugInfo, contains(':02.0'));
-        expect(periodic.debugInfo, contains('periodic: true'));
-        expect(periodic.debugInfo, contains(thisFileName));
+        expect(nonPeriodic.debugString, contains(':01.0'));
+        expect(nonPeriodic.debugString, contains('periodic: false'));
+        expect(nonPeriodic.debugString, contains(thisFileName));
+        expect(periodic.debugString, contains(':02.0'));
+        expect(periodic.debugString, contains('periodic: true'));
+        expect(periodic.debugString, contains(thisFileName));
       });
     });
   });

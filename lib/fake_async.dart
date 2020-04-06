@@ -66,25 +66,24 @@ class FakeAsync {
   final _microtasks = Queue<_Microtask>();
 
   /// All timers created within [run].
-  final _timers = <_FakeTimer>{};
+  final _timers = <FakeTimer>{};
 
-  /// Debugging information for all pending timers.
-  ///
-  /// Each returned [String] will contain details about the [Timer] in its first
-  /// line and will contain the stack trace from its construction on subsequent
-  /// lines.  The stack trace can passed to [StackTrace.fromString].
-  List<String> get pendingTimersDebugInfo =>
-      _timers.map((timer) => timer.debugInfo).toList(growable: false);
+  /// All the current pending timers.
+  List<FakeTimer> get pendingTimers => _timers.toList(growable: false);
+
+  /// The debug strings for all the current pending timers.
+  List<String> get pendingTimersDebugString =>
+      pendingTimers.map((timer) => timer.debugString).toList(growable: false);
 
   /// The number of active periodic timers created within a call to [run] or
   /// [fakeAsync].
   int get periodicTimerCount =>
-      _timers.where((timer) => timer._isPeriodic).length;
+      _timers.where((timer) => timer.isPeriodic).length;
 
   /// The number of active non-periodic timers created within a call to [run] or
   /// [fakeAsync].
   int get nonPeriodicTimerCount =>
-      _timers.where((timer) => !timer._isPeriodic).length;
+      _timers.where((timer) => !timer.isPeriodic).length;
 
   /// The number of pending microtasks scheduled within a call to [run] or
   /// [fakeAsync].
@@ -219,7 +218,7 @@ class FakeAsync {
       // every periodic timer has had a change to run against the final
       // value of [_elapsed].
       return _timers
-          .any((timer) => !timer._isPeriodic || timer._nextCall <= _elapsed);
+          .any((timer) => !timer.isPeriodic || timer._nextCall <= _elapsed);
     });
   }
 
@@ -228,7 +227,7 @@ class FakeAsync {
   ///
   /// Microtasks are flushed before and after each timer is fired. Before each
   /// timer fires, [_elapsed] is updated to the appropriate duration.
-  void _fireTimersWhile(bool Function(_FakeTimer timer) predicate) {
+  void _fireTimersWhile(bool Function(FakeTimer timer) predicate) {
     flushMicrotasks();
     for (;;) {
       if (_timers.isEmpty) break;
@@ -245,7 +244,7 @@ class FakeAsync {
   /// Creates a new timer controlled by `this` that fires [callback] after
   /// [duration] (or every [duration] if [periodic] is `true`).
   Timer _createTimer(Duration duration, Function callback, bool periodic) {
-    var timer = _FakeTimer(duration, callback, periodic, this);
+    var timer = FakeTimer._(duration, callback, periodic, this);
     _timers.add(timer);
     return timer;
   }
@@ -257,12 +256,12 @@ class FakeAsync {
 }
 
 /// An implementation of [Timer] that's controlled by a [FakeAsync].
-class _FakeTimer implements Timer {
+class FakeTimer implements Timer {
   /// If this is periodic, the time that should elapse between firings of this
   /// timer.
   ///
   /// This is not used by non-periodic timers.
-  final Duration _duration;
+  final Duration duration;
 
   /// The callback to invoke when the timer fires.
   ///
@@ -271,7 +270,7 @@ class _FakeTimer implements Timer {
   final Function _callback;
 
   /// Whether this is a periodic timer.
-  final bool _isPeriodic;
+  final bool isPeriodic;
 
   /// The [FakeAsync] instance that controls this timer.
   final FakeAsync _async;
@@ -290,15 +289,13 @@ class _FakeTimer implements Timer {
 
   /// Returns debugging information to try to identify the source of the
   /// [Timer].
-  ///
-  /// See [FakeAsync.pendingTimersDebugInfo] for requirements on the format.
-  String get debugInfo =>
-      'Timer (duration: $_duration, periodic: $_isPeriodic), created:\n'
+  String get debugString =>
+      'Timer (duration: $duration, periodic: $isPeriodic), created:\n'
       '$_creationStackTrace';
 
-  _FakeTimer(Duration duration, this._callback, this._isPeriodic, this._async)
-      : _duration = duration < Duration.zero ? Duration.zero : duration {
-    _nextCall = _async._elapsed + _duration;
+  FakeTimer._(Duration duration, this._callback, this.isPeriodic, this._async)
+      : duration = duration < Duration.zero ? Duration.zero : duration {
+    _nextCall = _async._elapsed + this.duration;
   }
 
   @override
@@ -310,9 +307,9 @@ class _FakeTimer implements Timer {
   /// Fires this timer's callback and updates its state as necessary.
   void _fire() {
     assert(isActive);
-    if (_isPeriodic) {
+    if (isPeriodic) {
       _callback(this);
-      _nextCall += _duration;
+      _nextCall += duration;
     } else {
       cancel();
       _callback();

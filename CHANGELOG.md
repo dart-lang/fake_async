@@ -1,6 +1,8 @@
 ## 1.1.0
 
-   * Added `FakeAsync.pendingTimersDebugInfo` (ported from quiver).
+   * Exposed the `FakeTimer` class as a public class.
+   * Added `FakeAsync.pendingTimers` which gives access to all pending timers
+     at the time of the call.
 
 ## 1.0.2
 
