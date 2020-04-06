@@ -74,7 +74,7 @@ class FakeAsync {
   /// line and will contain the stack trace from its construction on subsequent
   /// lines.  The stack trace can passed to [StackTrace.fromString].
   List<String> get pendingTimersDebugInfo =>
-      _timers.map((timer) => '${timer.debugInfo}').toList(growable: false);
+      _timers.map((timer) => timer.debugInfo).toList(growable: false);
 
   /// The number of active periodic timers created within a call to [run] or
   /// [fakeAsync].
@@ -281,7 +281,7 @@ class _FakeTimer implements Timer {
   Duration _nextCall;
 
   /// The current stack trace when this timer was created.
-  final StackTrace _creationStackTrace;
+  final _creationStackTrace = StackTrace.current;
 
   @override
   int get tick {
@@ -297,8 +297,7 @@ class _FakeTimer implements Timer {
       '$_creationStackTrace';
 
   _FakeTimer(Duration duration, this._callback, this._isPeriodic, this._async)
-      : _duration = duration < Duration.zero ? Duration.zero : duration,
-        _creationStackTrace = StackTrace.current {
+      : _duration = duration < Duration.zero ? Duration.zero : duration {
     _nextCall = _async._elapsed + _duration;
   }
 
