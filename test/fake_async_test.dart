@@ -488,7 +488,6 @@ void main() {
     test('should report debugging information of pending timers', () {
       FakeAsync().run((fakeAsync) {
         expect(fakeAsync.pendingTimers, isEmpty);
-        // Use `dynamic` so we can access `_FakeTimer` internals.
         var nonPeriodic = Timer(const Duration(seconds: 1), () {}) as FakeTimer;
         var periodic =
             Timer.periodic(const Duration(seconds: 2), (Timer timer) {})
