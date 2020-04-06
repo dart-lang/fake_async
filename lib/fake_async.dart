@@ -280,7 +280,7 @@ class FakeTimer implements Timer {
   Duration _nextCall;
 
   /// The current stack trace when this timer was created.
-  final _creationStackTrace = StackTrace.current;
+  final creationStackTrace = StackTrace.current;
 
   @override
   int get tick {
@@ -291,7 +291,7 @@ class FakeTimer implements Timer {
   /// [Timer].
   String get debugString =>
       'Timer (duration: $duration, periodic: $isPeriodic), created:\n'
-      '$_creationStackTrace';
+      '$creationStackTrace';
 
   FakeTimer._(Duration duration, this._callback, this.isPeriodic, this._async)
       : duration = duration < Duration.zero ? Duration.zero : duration {
