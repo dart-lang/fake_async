@@ -484,6 +484,33 @@ void main() {
         expect(async.nonPeriodicTimerCount, 0);
       });
     });
+
+    test('should report debugging information of pending timers', () {
+      FakeAsync().run((fakeAsync) {
+        expect(fakeAsync.pendingTimersDebugInfo, isEmpty);
+        // Use `dynamic` so we can access `_FakeTimer` internals.
+        dynamic nonPeriodic = Timer(const Duration(seconds: 1), () {});
+        dynamic periodic =
+            Timer.periodic(const Duration(seconds: 2), (Timer timer) {});
+        final debugInfo = fakeAsync.pendingTimersDebugInfo;
+        expect(debugInfo.length, 2);
+        expect(
+          debugInfo,
+          containsAll([
+            nonPeriodic.debugInfo,
+            periodic.debugInfo,
+          ]),
+        );
+
+        const thisFileName = 'fake_async_test.dart';
+        expect(nonPeriodic.debugInfo, contains(':01.0'));
+        expect(nonPeriodic.debugInfo, contains('periodic: false'));
+        expect(nonPeriodic.debugInfo, contains(thisFileName));
+        expect(periodic.debugInfo, contains(':02.0'));
+        expect(periodic.debugInfo, contains('periodic: true'));
+        expect(periodic.debugInfo, contains(thisFileName));
+      });
+    });
   });
 
   group('timers', () {

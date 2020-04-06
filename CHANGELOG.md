@@ -1,3 +1,7 @@
+## 1.1.0
+
+   * Added `FakeAsync.pendingTimersDebugInfo` (ported from quiver).
+
 ## 1.0.2
 
 * Update min SDK to 2.2.0

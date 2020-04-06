@@ -68,6 +68,10 @@ class FakeAsync {
   /// All timers created within [run].
   final _timers = <_FakeTimer>{};
 
+  /// Debugging information for all pending timers.
+  List<String> get pendingTimersDebugInfo =>
+      _timers.map((timer) => '${timer.debugInfo}').toList(growable: false);
+
   /// The number of active periodic timers created within a call to [run] or
   /// [fakeAsync].
   int get periodicTimerCount =>
@@ -272,13 +276,23 @@ class _FakeTimer implements Timer {
   /// fired.
   Duration _nextCall;
 
+  /// The current stack trace when this timer was created.
+  final StackTrace _creationStackTrace;
+
   @override
   int get tick {
     throw UnimplementedError('tick');
   }
 
+  /// Returns debugging information to try to identify the source of the
+  /// [Timer].
+  String get debugInfo =>
+      'Timer (duration: $_duration, periodic: $_isPeriodic), created:\n'
+      '$_creationStackTrace';
+
   _FakeTimer(Duration duration, this._callback, this._isPeriodic, this._async)
-      : _duration = duration < Duration.zero ? Duration.zero : duration {
+      : _duration = duration < Duration.zero ? Duration.zero : duration,
+        _creationStackTrace = StackTrace.current {
     _nextCall = _async._elapsed + _duration;
   }
 
