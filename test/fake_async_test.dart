@@ -171,7 +171,7 @@ void main() {
 
       test('should pass the periodic timer itself to callbacks', () {
         FakeAsync().run((async) {
-          Timer constructed;
+          late Timer constructed;
           constructed = Timer.periodic(elapseBy, expectAsync1((passed) {
             expect(passed, same(constructed));
           }));
@@ -516,7 +516,7 @@ void main() {
   group('timers', () {
     test("should become inactive as soon as they're invoked", () {
       return FakeAsync().run((async) {
-        Timer timer;
+        late Timer timer;
         timer = Timer(elapseBy, expectAsync0(() {
           expect(timer.isActive, isFalse);
         }));
