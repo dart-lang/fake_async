@@ -99,8 +99,8 @@ class FakeAsync {
   /// Note: it's usually more convenient to use [fakeAsync] rather than creating
   /// a [FakeAsync] object and calling [run] manually.
   FakeAsync({DateTime? initialTime}) {
-    initialTime ??= clock.now();
-    _clock = Clock(() => initialTime!.add(elapsed));
+    var nonNullInitialTime = initialTime ?? clock.now();
+    _clock = Clock(() => nonNullInitialTime.add(elapsed));
   }
 
   /// Returns a fake [Clock] whose time can is elapsed by calls to [elapse] and
