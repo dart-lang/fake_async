@@ -35,7 +35,7 @@ void main() {
 
 ## Integration With `clock`
 
-`FakeAsync` can't control the time reported by [`new DateTime.now()`][] or by
+`FakeAsync` can't control the time reported by [`DateTime.now()`][] or by
 the [`Stopwatch`][] class, since they're not part of `dart:async`. However, if
 you create them using the [`clock`][] package's [`clock.now()`][] or
 [`clock.stopwatch()`][] functions, `FakeAsync` will automatically override
