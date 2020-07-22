@@ -448,9 +448,9 @@ void main() {
     test('should report the number of pending microtasks', () {
       FakeAsync().run((async) {
         expect(async.microtaskCount, 0);
-        scheduleMicrotask(() => null);
+        scheduleMicrotask(() {});
         expect(async.microtaskCount, 1);
-        scheduleMicrotask(() => null);
+        scheduleMicrotask(() {});
         expect(async.microtaskCount, 2);
         async.flushMicrotasks();
         expect(async.microtaskCount, 0);
