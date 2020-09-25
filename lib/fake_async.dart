@@ -49,8 +49,10 @@ T fakeAsync<T>(T Function(FakeAsync async) callback, {DateTime? initialTime}) =>
 /// The synchronous passage of time (as from blocking or expensive calls) can
 /// also be simulated using [elapseBlocking].
 class FakeAsync {
+  final DateTime _initialTime;
+
   /// The value of [clock] within [run].
-  late final Clock _clock;
+  late final Clock _clock = Clock(() => _initialTime.add(elapsed));
 
   /// The amount of fake time that's elapsed since this [FakeAsync] was
   /// created.
@@ -98,10 +100,8 @@ class FakeAsync {
   ///
   /// Note: it's usually more convenient to use [fakeAsync] rather than creating
   /// a [FakeAsync] object and calling [run] manually.
-  FakeAsync({DateTime? initialTime}) {
-    var nonNullInitialTime = initialTime ?? clock.now();
-    _clock = Clock(() => nonNullInitialTime.add(elapsed));
-  }
+  FakeAsync({DateTime? initialTime})
+      : _initialTime = initialTime ?? clock.now();
 
   /// Returns a fake [Clock] whose time can is elapsed by calls to [elapse] and
   /// [elapseBlocking].

@@ -1,3 +1,5 @@
+## 1.2.0-nullsafety.2-dev
+
 ## 1.2.0-nullsafety.1
 
 * Allow 2.10 stable and 2.11.0 dev SDK versions.
