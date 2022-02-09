@@ -286,6 +286,9 @@ class FakeTimer implements Timer {
   late Duration _nextCall;
 
   /// The current stack trace when this timer was created.
+  ///
+  /// If the [FakeAsync] instance that created this has includeTimerStackTrace
+  /// set to false, then accessing this field will throw a [TypeError].
   StackTrace get creationStackTrace => _creationStackTrace!;
   final StackTrace? _creationStackTrace;
 
