@@ -287,8 +287,8 @@ class FakeTimer implements Timer {
 
   /// The current stack trace when this timer was created.
   ///
-  /// If the [FakeAsync] instance that created this has includeTimerStackTrace
-  /// set to false, then accessing this field will throw a [TypeError].
+  /// If [FakeAsync.includeTimerStackTrace] is set to false then accessing
+  /// this field will throw a [TypeError].
   StackTrace get creationStackTrace => _creationStackTrace!;
   final StackTrace? _creationStackTrace;
 
