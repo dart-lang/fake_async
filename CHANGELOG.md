@@ -1,6 +1,11 @@
 ## 1.3.2-wip
 
 * Require Dart 3.0.0
+* Add `autoMicrotask` to `FakeAsync` constructor and `fakeAsync` helper.
+  If enabled, scheduled microtasks run automatically without needing 
+  time to be elapsed or microtask queue to be flushed.
+* Runs timer and microtask callbacks in the scheduling zone, 
+  and if they throw, the error is reported in that zone.
 
 ## 1.3.1
 

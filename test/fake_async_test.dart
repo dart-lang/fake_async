@@ -335,6 +335,79 @@ void main() {
     });
   });
 
+  group('autoMicrotasks', () {
+    test('off', () async {
+      late FakeAsync asyncControl;
+      var run = 0;
+      FakeAsync().run((async) {
+        asyncControl = async;
+        scheduleMicrotask(() {
+          run++;
+          scheduleMicrotask(() {
+            run++;
+          });
+        });
+      });
+      expect(asyncControl.microtaskCount, 1);
+      expect(run, 0);
+      expect(asyncControl.elapsed, Duration.zero);
+      await Future.delayed(Duration.zero);
+      expect(asyncControl.microtaskCount, 1);
+      expect(run, 0);
+      expect(asyncControl.elapsed, Duration.zero);
+      asyncControl.flushMicrotasks();
+      expect(asyncControl.microtaskCount, 0);
+      expect(run, 2);
+      expect(asyncControl.elapsed, Duration.zero);
+    });
+
+    test('on', () async {
+      late FakeAsync asyncControl;
+      var run = 0;
+      FakeAsync(autoMicrotasks: true).run((async) {
+        asyncControl = async;
+        scheduleMicrotask(() {
+          run++;
+          scheduleMicrotask(() {
+            run++;
+          });
+        });
+      });
+      // Microtask queue can still be inspected.
+      expect(asyncControl.microtaskCount, 1);
+      expect(run, 0);
+      expect(asyncControl.elapsed, Duration.zero);
+
+      await Future.delayed(Duration.zero);
+      // Microtasks run automatically, as microtasks of the parent zone.
+      // Microtasks take no fake time to run.
+      expect(asyncControl.microtaskCount, 0);
+      expect(run, 2);
+      expect(asyncControl.elapsed, Duration.zero);
+    });
+
+    test('on with flush', () async {
+      late FakeAsync asyncControl;
+      var run = 0;
+      FakeAsync(autoMicrotasks: true).run((async) {
+        asyncControl = async;
+        scheduleMicrotask(() {
+          run++;
+          scheduleMicrotask(() {
+            run++;
+          });
+        });
+      });
+      // Microtask queue can still be inspected.
+      expect(asyncControl.microtaskCount, 1);
+      expect(run, 0);
+      // And can still be flushed manually. Runs to completion.
+      asyncControl.flushMicrotasks();
+      expect(asyncControl.microtaskCount, 0);
+      expect(run, 2);
+    });
+  });
+
   group('flushTimers', () {
     test('should flush timers in FIFO order', () {
       FakeAsync().run((async) {
