@@ -37,8 +37,10 @@ typedef _Microtask = void Function();
 /// [`clock.now()`]: https://www.dartdocs.org/documentation/clock/latest/clock/Clock/now.html
 ///
 /// Returns the result of [callback].
-T fakeAsync<T>(T Function(FakeAsync async) callback, {DateTime? initialTime}) =>
-    FakeAsync(initialTime: initialTime).run(callback);
+T fakeAsync<T>(T Function(FakeAsync async) callback,
+        {DateTime? initialTime, bool autoMicrotasks = false}) =>
+    FakeAsync(initialTime: initialTime, autoMicrotasks: autoMicrotasks)
+        .run(callback);
 
 /// A class that mocks out the passage of time within a [Zone].
 ///
@@ -56,6 +58,16 @@ class FakeAsync {
   /// created.
   Duration get elapsed => _elapsed;
   var _elapsed = Duration.zero;
+
+  /// Whether microtasks are automatically scheduled to run.
+  final bool _autoAdvanceMicrotasks;
+
+  /// Whether a microtask has been scheduled in the parent zone to auto-run
+  /// microtasks.
+  ///
+  /// Also `true` while that microtask is running and advancing the microtask
+  /// loop.
+  bool _microtaskScheduled = false;
 
   /// Whether Timers created by this FakeAsync will include a creation stack
   /// trace in [FakeAsync.pendingTimersDebugString].
@@ -100,9 +112,17 @@ class FakeAsync {
   ///
   /// [`clock`]: https://www.dartdocs.org/documentation/clock/latest/clock/clock.html
   ///
+  /// If [autoMicrotasks] is set to `true`, scheduled microtasks will
+  /// automatically be run, as a microtask of the parent zone,
+  /// without a need to manually advance the clock.
+  ///
   /// Note: it's usually more convenient to use [fakeAsync] rather than creating
   /// a [FakeAsync] object and calling [run] manually.
-  FakeAsync({DateTime? initialTime, this.includeTimerStackTrace = true}) {
+  FakeAsync(
+      {DateTime? initialTime,
+      this.includeTimerStackTrace = true,
+      bool autoMicrotasks = false})
+      : _autoAdvanceMicrotasks = autoMicrotasks {
     final nonNullInitialTime = initialTime ?? clock.now();
     _clock = Clock(() => nonNullInitialTime.add(elapsed));
   }
@@ -178,18 +198,32 @@ class FakeAsync {
   ///
   /// Note: it's usually more convenient to use [fakeAsync] rather than creating
   /// a [FakeAsync] object and calling [run] manually.
-  T run<T>(T Function(FakeAsync self) callback) =>
-      runZoned(() => withClock(_clock, () => callback(this)),
-          zoneSpecification: ZoneSpecification(
-              createTimer: (_, __, ___, duration, callback) =>
-                  _createTimer(duration, callback, false),
-              createPeriodicTimer: (_, __, ___, duration, callback) =>
-                  _createTimer(duration, callback, true),
-              scheduleMicrotask: (_, __, ___, microtask) =>
-                  _microtasks.add(microtask)));
+  T run<T>(T Function(FakeAsync self) callback) => runZoned(
+      () => withClock(_clock, () => callback(this)),
+      zoneSpecification: ZoneSpecification(
+          createTimer: (s, p, z, duration, callback) =>
+              _createTimer(duration, z.bindCallbackGuarded(callback), false),
+          createPeriodicTimer: (s, p, z, duration, callback) => _createTimer(
+              duration, z.bindUnaryCallbackGuarded(callback), true),
+          scheduleMicrotask: (s, p, z, microtask) {
+            if (_autoAdvanceMicrotasks && !_microtaskScheduled) {
+              _microtaskScheduled = true;
+              p.scheduleMicrotask(s, () {
+                try {
+                  flushMicrotasks();
+                } finally {
+                  _microtaskScheduled = false;
+                }
+              });
+            }
+            _microtasks.add(z.bindCallbackGuarded(microtask));
+          }));
 
   /// Runs all pending microtasks scheduled within a call to [run] or
   /// [fakeAsync] until there are no more microtasks scheduled.
+  ///
+  /// If [timePerMicrotask] is provided, time is advanced by that
+  /// amount for each executed microtask.
   ///
   /// Does not run timers.
   void flushMicrotasks() {
