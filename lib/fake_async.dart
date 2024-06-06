@@ -217,13 +217,15 @@ class FakeAsync {
         throw StateError('Exceeded timeout $timeout while flushing timers');
       }
 
-      if (flushPeriodicTimers) return true;
+      // With [flushPeriodicTimers] false, continue firing timers only until
+      // all remaining timers are periodic *and* every periodic timer has had
+      // a chance to run against the final value of [_elapsed].
+      if (!flushPeriodicTimers) {
+        return !_timers
+            .every((timer) => timer.isPeriodic && timer._nextCall > _elapsed);
+      }
 
-      // Continue firing timers until the only ones left are periodic *and*
-      // every periodic timer has had a change to run against the final
-      // value of [_elapsed].
-      return _timers
-          .any((timer) => !timer.isPeriodic || timer._nextCall <= _elapsed);
+      return true;
     });
   }
 
