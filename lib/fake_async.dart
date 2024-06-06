@@ -138,7 +138,7 @@ class FakeAsync {
     }
 
     _elapsingTo = _elapsed + duration;
-    _fireTimersWhile((next) => next._nextCall <= _elapsingTo!);
+    while (runNextTimer(timeout: _elapsingTo! - _elapsed)) {}
     _elapseTo(_elapsingTo!);
     _elapsingTo = null;
   }
@@ -211,41 +211,50 @@ class FakeAsync {
       {Duration timeout = const Duration(hours: 1),
       bool flushPeriodicTimers = true}) {
     final absoluteTimeout = _elapsed + timeout;
-    _fireTimersWhile((timer) {
-      if (timer._nextCall > absoluteTimeout) {
-        // TODO(nweiz): Make this a [TimeoutException].
-        throw StateError('Exceeded timeout $timeout while flushing timers');
-      }
-
+    for (;;) {
       // With [flushPeriodicTimers] false, continue firing timers only until
       // all remaining timers are periodic *and* every periodic timer has had
       // a chance to run against the final value of [_elapsed].
       if (!flushPeriodicTimers) {
-        return !_timers
-            .every((timer) => timer.isPeriodic && timer._nextCall > _elapsed);
+        if (_timers
+            .every((timer) => timer.isPeriodic && timer._nextCall > _elapsed)) {
+          break;
+        }
       }
 
-      return true;
-    });
+      if (!runNextTimer(timeout: absoluteTimeout - _elapsed)) {
+        if (_timers.isEmpty) break;
+
+        // TODO(nweiz): Make this a [TimeoutException].
+        throw StateError('Exceeded timeout $timeout while flushing timers');
+      }
+    }
   }
 
-  /// Invoke the callback for each timer until [predicate] returns `false` for
-  /// the next timer that would be fired.
+  /// Elapses time to run one timer, if any timer exists.
   ///
-  /// Microtasks are flushed before and after each timer is fired. Before each
-  /// timer fires, [_elapsed] is updated to the appropriate duration.
-  void _fireTimersWhile(bool Function(FakeTimer timer) predicate) {
+  /// Microtasks are flushed before and after the timer runs. Before the
+  /// timer runs, [elapsed] is updated to the appropriate value.
+  ///
+  /// The [timeout] controls how much fake time may elapse. If non-null,
+  /// then timers further in the future than the given duration will be ignored.
+  ///
+  /// Returns true if a timer was run, false otherwise.
+  bool runNextTimer({Duration? timeout}) {
+    final absoluteTimeout = timeout == null ? null : _elapsed + timeout;
+
     flushMicrotasks();
-    for (;;) {
-      if (_timers.isEmpty) break;
 
-      final timer = minBy(_timers, (FakeTimer timer) => timer._nextCall)!;
-      if (!predicate(timer)) break;
-
-      _elapseTo(timer._nextCall);
-      timer._fire();
-      flushMicrotasks();
+    if (_timers.isEmpty) return false;
+    final timer = minBy(_timers, (FakeTimer timer) => timer._nextCall)!;
+    if (absoluteTimeout != null && timer._nextCall > absoluteTimeout) {
+      return false;
     }
+
+    _elapseTo(timer._nextCall);
+    timer._fire();
+    flushMicrotasks();
+    return true;
   }
 
   /// Creates a new timer controlled by `this` that fires [callback] after

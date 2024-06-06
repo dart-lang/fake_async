@@ -446,6 +446,101 @@ void main() {
     });
   });
 
+  group('runNextTimer', () {
+    test('should run the earliest timer', () {
+      FakeAsync().run((async) {
+        var last = 0;
+        Timer(const Duration(days: 2), () => last = 2);
+        Timer(const Duration(days: 1), () => last = 1);
+        Timer(const Duration(days: 3), () => last = 3);
+        expect(async.runNextTimer(), true);
+        expect(last, 1);
+      });
+    });
+
+    test('should return false if no timers exist', () {
+      FakeAsync().run((async) {
+        expect(async.runNextTimer(), false);
+      });
+    });
+
+    test('should run microtasks before choosing timer', () {
+      FakeAsync().run((async) {
+        var last = 0;
+        Timer(const Duration(days: 2), () => last = 2);
+        scheduleMicrotask(() => Timer(const Duration(days: 1), () => last = 1));
+        expect(async.runNextTimer(), true);
+        expect(last, 1);
+        expect(async.runNextTimer(), true);
+        expect(last, 2);
+      });
+    });
+
+    test('should run microtasks before deciding no timers exist', () {
+      FakeAsync().run((async) {
+        var last = 0;
+        scheduleMicrotask(() => Timer(const Duration(days: 1), () => last = 1));
+        expect(async.runNextTimer(), true);
+        expect(last, 1);
+      });
+    });
+
+    test('should run microtasks after timer', () {
+      FakeAsync().run((async) {
+        var ran = false;
+        Timer.run(() => scheduleMicrotask(() => ran = true));
+        expect(async.runNextTimer(), true);
+        expect(ran, true);
+      });
+    });
+
+    test('should update elapsed before running timer', () {
+      FakeAsync().run((async) {
+        Duration? time;
+        Timer(const Duration(days: 1), () => time = async.elapsed);
+        expect(async.runNextTimer(), true);
+        expect(time, const Duration(days: 1));
+      });
+    });
+
+    test('should apply timeout', () {
+      FakeAsync().run((async) {
+        var ran = false;
+        Timer(const Duration(days: 1), () => ran = true);
+        expect(async.runNextTimer(timeout: const Duration(hours: 1)), false);
+        expect(ran, false);
+      });
+    });
+
+    test('should apply timeout as non-strict bound', () {
+      FakeAsync().run((async) {
+        var ran = false;
+        Timer(const Duration(hours: 1), () => ran = true);
+        expect(async.runNextTimer(timeout: const Duration(hours: 1)), true);
+        expect(ran, true);
+      });
+    });
+
+    test('should apply timeout relative to current time', () {
+      FakeAsync().run((async) {
+        var ran = false;
+        Timer(const Duration(hours: 3), () => ran = true);
+        async.elapse(const Duration(hours: 2));
+        expect(async.runNextTimer(timeout: const Duration(hours: 2)), true);
+        expect(ran, true);
+      });
+    });
+
+    test('should have no timeout by default', () {
+      FakeAsync().run((async) {
+        var ran = false;
+        Timer(const Duration(microseconds: 1 << 52), () => ran = true);
+        expect(async.runNextTimer(), true);
+        expect(ran, true);
+      });
+    });
+  });
+
   group('stats', () {
     test('should report the number of pending microtasks', () {
       FakeAsync().run((async) {
