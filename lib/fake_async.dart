@@ -217,7 +217,7 @@ class FakeAsync {
         throw StateError('Exceeded timeout $timeout while flushing timers');
       }
 
-      if (flushPeriodicTimers) return _timers.isNotEmpty;
+      if (flushPeriodicTimers) return true;
 
       // Continue firing timers until the only ones left are periodic *and*
       // every periodic timer has had a change to run against the final
