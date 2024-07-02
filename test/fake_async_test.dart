@@ -503,35 +503,35 @@ void main() {
       });
     });
 
-    test('should apply timeout', () {
+    test('should apply `within`', () {
       FakeAsync().run((async) {
         var ran = false;
         Timer(const Duration(days: 1), () => ran = true);
-        expect(async.runNextTimer(timeout: const Duration(hours: 1)), false);
+        expect(async.runNextTimer(within: const Duration(hours: 1)), false);
         expect(ran, false);
       });
     });
 
-    test('should apply timeout as non-strict bound', () {
+    test('should apply `within` as non-strict bound', () {
       FakeAsync().run((async) {
         var ran = false;
         Timer(const Duration(hours: 1), () => ran = true);
-        expect(async.runNextTimer(timeout: const Duration(hours: 1)), true);
+        expect(async.runNextTimer(within: const Duration(hours: 1)), true);
         expect(ran, true);
       });
     });
 
-    test('should apply timeout relative to current time', () {
+    test('should apply `within` relative to current time', () {
       FakeAsync().run((async) {
         var ran = false;
         Timer(const Duration(hours: 3), () => ran = true);
         async.elapse(const Duration(hours: 2));
-        expect(async.runNextTimer(timeout: const Duration(hours: 2)), true);
+        expect(async.runNextTimer(within: const Duration(hours: 2)), true);
         expect(ran, true);
       });
     });
 
-    test('should have no timeout by default', () {
+    test('should have no time bound by default', () {
       FakeAsync().run((async) {
         var ran = false;
         Timer(const Duration(microseconds: 1 << 52), () => ran = true);

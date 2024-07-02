@@ -237,12 +237,12 @@ class FakeAsync {
   /// and again after the timer runs.
   /// Before the timer runs, [elapsed] is updated to the appropriate value.
   ///
-  /// The [timeout] controls how much fake time may elapse. If non-null,
-  /// then timers further in the future than the given duration will be ignored.
+  /// When [within] is non-null, only timers that are due within the
+  /// given duration will be considered.
   ///
   /// Returns `true` if a timer was run, `false` otherwise.
-  bool runNextTimer({Duration? timeout}) {
-    return _runNextTimer(timeout == null ? null : _elapsed + timeout);
+  bool runNextTimer({Duration? within}) {
+    return _runNextTimer(within == null ? null : _elapsed + within);
   }
 
   bool _runNextTimer([Duration? until]) {
