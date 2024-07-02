@@ -138,7 +138,7 @@ class FakeAsync {
     }
 
     _elapsingTo = _elapsed + duration;
-    while (runNextTimer(timeout: _elapsingTo! - _elapsed)) {}
+    while (_runNextTimer(_elapsingTo!)) {}
     _elapseTo(_elapsingTo!);
     _elapsingTo = null;
   }
@@ -222,7 +222,7 @@ class FakeAsync {
         }
       }
 
-      if (!runNextTimer(timeout: absoluteTimeout - _elapsed)) {
+      if (!_runNextTimer(absoluteTimeout)) {
         if (_timers.isEmpty) break;
 
         // TODO(nweiz): Make this a [TimeoutException].
@@ -242,13 +242,15 @@ class FakeAsync {
   ///
   /// Returns `true` if a timer was run, `false` otherwise.
   bool runNextTimer({Duration? timeout}) {
-    final absoluteTimeout = timeout == null ? null : _elapsed + timeout;
+    return _runNextTimer(timeout == null ? null : _elapsed + timeout);
+  }
 
+  bool _runNextTimer([Duration? until]) {
     flushMicrotasks();
 
     if (_timers.isEmpty) return false;
     final timer = minBy(_timers, (FakeTimer timer) => timer._nextCall)!;
-    if (absoluteTimeout != null && timer._nextCall > absoluteTimeout) {
+    if (until != null && timer._nextCall > until) {
       return false;
     }
 
