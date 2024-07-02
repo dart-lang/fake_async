@@ -500,6 +500,15 @@ void main() {
         Timer(const Duration(days: 1), () => time = async.elapsed);
         expect(async.runNextTimer(), true);
         expect(time, const Duration(days: 1));
+        expect(async.elapsed, const Duration(days: 1));
+      });
+    });
+
+    test('should not update elapsed if no timers exist', () {
+      FakeAsync().run((async) {
+        async.elapse(const Duration(hours: 1));
+        expect(async.runNextTimer(), false);
+        expect(async.elapsed, const Duration(hours: 1));
       });
     });
 
@@ -509,6 +518,14 @@ void main() {
         Timer(const Duration(days: 1), () => ran = true);
         expect(async.runNextTimer(until: const Duration(hours: 1)), false);
         expect(ran, false);
+      });
+    });
+
+    test('should not update elapsed if all timers are past `until`', () {
+      FakeAsync().run((async) {
+        Timer(const Duration(days: 1), () {});
+        expect(async.runNextTimer(until: const Duration(hours: 1)), false);
+        expect(async.elapsed, Duration.zero);
       });
     });
 
@@ -526,8 +543,11 @@ void main() {
         var ran = false;
         Timer(const Duration(hours: 3), () => ran = true);
         async.elapse(const Duration(hours: 1));
+
         expect(async.runNextTimer(until: const Duration(hours: 2)), false);
         expect(ran, false);
+        expect(async.elapsed, const Duration(hours: 1));
+
         expect(async.runNextTimer(until: const Duration(hours: 3)), true);
         expect(ran, true);
       });
