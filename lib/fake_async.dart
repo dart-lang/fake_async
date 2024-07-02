@@ -211,7 +211,7 @@ class FakeAsync {
       {Duration timeout = const Duration(hours: 1),
       bool flushPeriodicTimers = true}) {
     final absoluteTimeout = _elapsed + timeout;
-    for (;;) {
+    while (true) {
       // With [flushPeriodicTimers] false, continue firing timers only until
       // all remaining timers are periodic *and* every periodic timer has had
       // a chance to run against the final value of [_elapsed].
@@ -233,13 +233,14 @@ class FakeAsync {
 
   /// Elapses time to run one timer, if any timer exists.
   ///
-  /// Microtasks are flushed before and after the timer runs. Before the
-  /// timer runs, [elapsed] is updated to the appropriate value.
+  /// Microtasks are flushed before identifying the timer to run,
+  /// and again after the timer runs.
+  /// Before the timer runs, [elapsed] is updated to the appropriate value.
   ///
   /// The [timeout] controls how much fake time may elapse. If non-null,
   /// then timers further in the future than the given duration will be ignored.
   ///
-  /// Returns true if a timer was run, false otherwise.
+  /// Returns `true` if a timer was run, `false` otherwise.
   bool runNextTimer({Duration? timeout}) {
     final absoluteTimeout = timeout == null ? null : _elapsed + timeout;
 
