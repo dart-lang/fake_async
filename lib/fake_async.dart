@@ -138,7 +138,7 @@ class FakeAsync {
     }
 
     _elapsingTo = _elapsed + duration;
-    while (_runNextTimer(_elapsingTo!)) {}
+    while (runNextTimer(until: _elapsingTo!)) {}
     _elapseTo(_elapsingTo!);
     _elapsingTo = null;
   }
@@ -222,7 +222,7 @@ class FakeAsync {
         }
       }
 
-      if (!_runNextTimer(absoluteTimeout)) {
+      if (!runNextTimer(until: absoluteTimeout)) {
         if (_timers.isEmpty) break;
 
         // TODO(nweiz): Make this a [TimeoutException].
@@ -242,19 +242,15 @@ class FakeAsync {
   /// and again after the timer runs.
   /// Before the timer runs, [elapsed] is updated to the appropriate value.
   ///
-  /// When [within] is non-null, only timers that are due within the
-  /// given duration will be considered.
+  /// When [until] is non-null, only timers due up until the given time
+  /// will be considered, in terms of [elapsed].
   ///
   /// Because multiple timers may be due at the same time, a call to this
   /// method may leave the time advanced to where other timers are due.
   /// Doing an `elapse(Duration.zero)` afterwards may trigger more timers.
   ///
   /// Returns `true` if a timer was run, `false` otherwise.
-  bool runNextTimer({Duration? within}) {
-    return _runNextTimer(within == null ? null : _elapsed + within);
-  }
-
-  bool _runNextTimer([Duration? until]) {
+  bool runNextTimer({Duration? until}) {
     flushMicrotasks();
 
     if (_timers.isEmpty) return false;

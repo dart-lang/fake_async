@@ -503,30 +503,32 @@ void main() {
       });
     });
 
-    test('should apply `within`', () {
+    test('should apply `until`', () {
       FakeAsync().run((async) {
         var ran = false;
         Timer(const Duration(days: 1), () => ran = true);
-        expect(async.runNextTimer(within: const Duration(hours: 1)), false);
+        expect(async.runNextTimer(until: const Duration(hours: 1)), false);
         expect(ran, false);
       });
     });
 
-    test('should apply `within` as non-strict bound', () {
+    test('should apply `until` as non-strict bound', () {
       FakeAsync().run((async) {
         var ran = false;
         Timer(const Duration(hours: 1), () => ran = true);
-        expect(async.runNextTimer(within: const Duration(hours: 1)), true);
+        expect(async.runNextTimer(until: const Duration(hours: 1)), true);
         expect(ran, true);
       });
     });
 
-    test('should apply `within` relative to current time', () {
+    test('should apply `until` relative to start', () {
       FakeAsync().run((async) {
         var ran = false;
         Timer(const Duration(hours: 3), () => ran = true);
-        async.elapse(const Duration(hours: 2));
-        expect(async.runNextTimer(within: const Duration(hours: 2)), true);
+        async.elapse(const Duration(hours: 1));
+        expect(async.runNextTimer(until: const Duration(hours: 2)), false);
+        expect(ran, false);
+        expect(async.runNextTimer(until: const Duration(hours: 3)), true);
         expect(ran, true);
       });
     });
