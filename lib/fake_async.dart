@@ -233,12 +233,21 @@ class FakeAsync {
 
   /// Elapses time to run one timer, if any timer exists.
   ///
+  /// Running one timer at a time, rather than just advancing time such as
+  /// with [elapse] or [flushTimers], can be useful if a test wants to run
+  /// its own logic between each timer event, for example to verify invariants
+  /// or to end the test early in case of an error.
+  ///
   /// Microtasks are flushed before identifying the timer to run,
   /// and again after the timer runs.
   /// Before the timer runs, [elapsed] is updated to the appropriate value.
   ///
   /// When [within] is non-null, only timers that are due within the
   /// given duration will be considered.
+  ///
+  /// Because multiple timers may be due at the same time, a call to this
+  /// method may leave the time advanced to where other timers are due.
+  /// Doing an `elapse(Duration.zero)` afterwards may trigger more timers.
   ///
   /// Returns `true` if a timer was run, `false` otherwise.
   bool runNextTimer({Duration? within}) {
