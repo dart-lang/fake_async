@@ -138,7 +138,7 @@ class FakeAsync {
     }
 
     _elapsingTo = _elapsed + duration;
-    _fireTimersWhile((next) => next._nextCall <= _elapsingTo!);
+    while (runNextTimer(until: _elapsingTo!)) {}
     _elapseTo(_elapsingTo!);
     _elapsingTo = null;
   }
@@ -211,39 +211,58 @@ class FakeAsync {
       {Duration timeout = const Duration(hours: 1),
       bool flushPeriodicTimers = true}) {
     final absoluteTimeout = _elapsed + timeout;
-    _fireTimersWhile((timer) {
-      if (timer._nextCall > absoluteTimeout) {
+    while (true) {
+      // With [flushPeriodicTimers] false, continue firing timers only until
+      // all remaining timers are periodic *and* every periodic timer has had
+      // a chance to run against the final value of [_elapsed].
+      if (!flushPeriodicTimers) {
+        if (_timers
+            .every((timer) => timer.isPeriodic && timer._nextCall > _elapsed)) {
+          break;
+        }
+      }
+
+      if (!runNextTimer(until: absoluteTimeout)) {
+        if (_timers.isEmpty) break;
+
         // TODO(nweiz): Make this a [TimeoutException].
         throw StateError('Exceeded timeout $timeout while flushing timers');
       }
-
-      if (flushPeriodicTimers) return _timers.isNotEmpty;
-
-      // Continue firing timers until the only ones left are periodic *and*
-      // every periodic timer has had a change to run against the final
-      // value of [_elapsed].
-      return _timers
-          .any((timer) => !timer.isPeriodic || timer._nextCall <= _elapsed);
-    });
+    }
   }
 
-  /// Invoke the callback for each timer until [predicate] returns `false` for
-  /// the next timer that would be fired.
+  /// Elapses time to run one timer, if any timer exists.
   ///
-  /// Microtasks are flushed before and after each timer is fired. Before each
-  /// timer fires, [_elapsed] is updated to the appropriate duration.
-  void _fireTimersWhile(bool Function(FakeTimer timer) predicate) {
+  /// Running one timer at a time, rather than just advancing time such as
+  /// with [elapse] or [flushTimers], can be useful if a test wants to run
+  /// its own logic between each timer event, for example to verify invariants
+  /// or to end the test early in case of an error.
+  ///
+  /// Microtasks are flushed before identifying the timer to run,
+  /// and again after the timer runs.
+  /// Before the timer runs, [elapsed] is updated to the appropriate value.
+  ///
+  /// When [until] is non-null, only timers due up until the given time
+  /// will be considered, in terms of [elapsed].
+  ///
+  /// Because multiple timers may be due at the same time, a call to this
+  /// method may leave the time advanced to where other timers are due.
+  /// Doing an `elapse(Duration.zero)` afterwards may trigger more timers.
+  ///
+  /// Returns `true` if a timer was run, `false` otherwise.
+  bool runNextTimer({Duration? until}) {
     flushMicrotasks();
-    for (;;) {
-      if (_timers.isEmpty) break;
 
-      final timer = minBy(_timers, (FakeTimer timer) => timer._nextCall)!;
-      if (!predicate(timer)) break;
-
-      _elapseTo(timer._nextCall);
-      timer._fire();
-      flushMicrotasks();
+    if (_timers.isEmpty) return false;
+    final timer = minBy(_timers, (FakeTimer timer) => timer._nextCall)!;
+    if (until != null && timer._nextCall > until) {
+      return false;
     }
+
+    _elapseTo(timer._nextCall);
+    timer._fire();
+    flushMicrotasks();
+    return true;
   }
 
   /// Creates a new timer controlled by `this` that fires [callback] after
