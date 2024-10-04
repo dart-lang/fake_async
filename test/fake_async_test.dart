@@ -446,6 +446,123 @@ void main() {
     });
   });
 
+  group('runNextTimer', () {
+    test('should run the earliest timer', () {
+      FakeAsync().run((async) {
+        var last = 0;
+        Timer(const Duration(days: 2), () => last = 2);
+        Timer(const Duration(days: 1), () => last = 1);
+        Timer(const Duration(days: 3), () => last = 3);
+        expect(async.runNextTimer(), true);
+        expect(last, 1);
+      });
+    });
+
+    test('should return false if no timers exist', () {
+      FakeAsync().run((async) {
+        expect(async.runNextTimer(), false);
+      });
+    });
+
+    test('should run microtasks before choosing timer', () {
+      FakeAsync().run((async) {
+        var last = 0;
+        Timer(const Duration(days: 2), () => last = 2);
+        scheduleMicrotask(() => Timer(const Duration(days: 1), () => last = 1));
+        expect(async.runNextTimer(), true);
+        expect(last, 1);
+        expect(async.runNextTimer(), true);
+        expect(last, 2);
+      });
+    });
+
+    test('should run microtasks before deciding no timers exist', () {
+      FakeAsync().run((async) {
+        var last = 0;
+        scheduleMicrotask(() => Timer(const Duration(days: 1), () => last = 1));
+        expect(async.runNextTimer(), true);
+        expect(last, 1);
+      });
+    });
+
+    test('should run microtasks after timer', () {
+      FakeAsync().run((async) {
+        var ran = false;
+        Timer.run(() => scheduleMicrotask(() => ran = true));
+        expect(async.runNextTimer(), true);
+        expect(ran, true);
+      });
+    });
+
+    test('should update elapsed before running timer', () {
+      FakeAsync().run((async) {
+        Duration? time;
+        Timer(const Duration(days: 1), () => time = async.elapsed);
+        expect(async.runNextTimer(), true);
+        expect(time, const Duration(days: 1));
+        expect(async.elapsed, const Duration(days: 1));
+      });
+    });
+
+    test('should not update elapsed if no timers exist', () {
+      FakeAsync().run((async) {
+        async.elapse(const Duration(hours: 1));
+        expect(async.runNextTimer(), false);
+        expect(async.elapsed, const Duration(hours: 1));
+      });
+    });
+
+    test('should apply `until`', () {
+      FakeAsync().run((async) {
+        var ran = false;
+        Timer(const Duration(days: 1), () => ran = true);
+        expect(async.runNextTimer(until: const Duration(hours: 1)), false);
+        expect(ran, false);
+      });
+    });
+
+    test('should not update elapsed if all timers are past `until`', () {
+      FakeAsync().run((async) {
+        Timer(const Duration(days: 1), () {});
+        expect(async.runNextTimer(until: const Duration(hours: 1)), false);
+        expect(async.elapsed, Duration.zero);
+      });
+    });
+
+    test('should apply `until` as non-strict bound', () {
+      FakeAsync().run((async) {
+        var ran = false;
+        Timer(const Duration(hours: 1), () => ran = true);
+        expect(async.runNextTimer(until: const Duration(hours: 1)), true);
+        expect(ran, true);
+      });
+    });
+
+    test('should apply `until` relative to start', () {
+      FakeAsync().run((async) {
+        var ran = false;
+        Timer(const Duration(hours: 3), () => ran = true);
+        async.elapse(const Duration(hours: 1));
+
+        expect(async.runNextTimer(until: const Duration(hours: 2)), false);
+        expect(ran, false);
+        expect(async.elapsed, const Duration(hours: 1));
+
+        expect(async.runNextTimer(until: const Duration(hours: 3)), true);
+        expect(ran, true);
+      });
+    });
+
+    test('should have no time bound by default', () {
+      FakeAsync().run((async) {
+        var ran = false;
+        Timer(const Duration(microseconds: 1 << 52), () => ran = true);
+        expect(async.runNextTimer(), true);
+        expect(ran, true);
+      });
+    });
+  });
+
   group('stats', () {
     test('should report the number of pending microtasks', () {
       FakeAsync().run((async) {

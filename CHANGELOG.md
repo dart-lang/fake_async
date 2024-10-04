@@ -1,6 +1,8 @@
-## 1.3.2-wip
+## 1.4.0-wip
 
 * Require Dart 3.3
+* Add `FakeAsync.runNextTimer`, a single-step analogue
+  of `FakeAsync.flushTimers`.
 
 ## 1.3.1
 
