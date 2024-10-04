@@ -247,7 +247,12 @@ class FakeAsync {
   ///
   /// Because multiple timers may be due at the same time, a call to this
   /// method may leave the time advanced to where other timers are due.
-  /// Doing an `elapse(Duration.zero)` afterwards may trigger more timers.
+  /// Calling `elapse(Duration.zero)` afterwards may trigger more timers.
+  ///
+  /// If microtasks or timer callbacks make their own calls to methods on this
+  /// [FakeAsync], then a call to this method may indirectly cause more timers
+  /// to run beyond the timer it runs directly, and may cause [elapsed] to
+  /// advance beyond [until].  Any such timers are ignored in the return value.
   ///
   /// Returns `true` if a timer was run, `false` otherwise.
   bool runNextTimer({Duration? until}) {
